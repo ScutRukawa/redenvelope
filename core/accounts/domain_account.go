@@ -1,7 +1,9 @@
 package accounts
 
 import (
+	"context"
 	"errors"
+	"log"
 	"redenvelope/infra/base"
 	"redenvelope/services"
 
@@ -15,6 +17,11 @@ import (
 type AccountDomain struct {
 	account    Account
 	accountLog AccountLog
+}
+
+//NewAccountDomain x
+func NewAccountDomain() *AccountDomain {
+	return new(AccountDomain)
 }
 
 func (domain *AccountDomain) GetAccount(accountNo string) *services.AccountDTO {
@@ -108,9 +115,20 @@ func (domain *AccountDomain) Create(
 	return rdto, err
 }
 
-//Transfer x
-func (domain *AccountDomain) Transfer(
-	dto services.AccountTransferDTO) (services.TransferedStatus, error) {
+//transfer x
+func (domain *AccountDomain) Transfer(dto services.AccountTransferDTO) (status services.TransferedStatus, err error) {
+	err = base.Tx(func(runner *dbx.TxRunner) error {
+		ctx := base.WithValueContext(context.Background(), runner)
+		status, err = domain.TransferWithContextTx(ctx, dto)
+
+		return err
+	})
+	return status, err
+}
+
+//TransferWithContextTx x
+func (domain *AccountDomain) TransferWithContextTx(
+	ctx context.Context, dto services.AccountTransferDTO) (services.TransferedStatus, error) {
 	//支出类型
 	amount := dto.Amount
 	if dto.ChangeFlag == services.FlagTransferOut {
@@ -120,9 +138,12 @@ func (domain *AccountDomain) Transfer(
 	var status services.TransferedStatus
 	domain.account = Account{}
 	domain.accountLog.FromTransferDTO(&dto)
+	log.Printf("xxxxxxxxxx%+v", &dto)
+	log.Printf("xxxxxxxxxx%+v", domain.accountLog)
+
 	domain.createAccountLogNo()
 	//检查余额是否足够和更新余额，乐观锁
-	err := base.Tx(func(runner *dbx.TxRunner) error {
+	err := base.ExecuteContext(ctx, func(runner *dbx.TxRunner) error {
 		accountDao := AccountDao{runner: runner}
 		accountLogDao := AccountLogDao{runner: runner}
 		rows, err := accountDao.UpdateBalance(domain.accountLog.AccountNo, amount)

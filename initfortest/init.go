@@ -1,12 +1,10 @@
-package main
+package initfortest
 
 import (
 	"fmt"
-	_ "redenvelope/apis/web" //webapi init
-	_ "redenvelope/core/envelopes"
+	//_ "redenvelope/apis/web" //webapi init
 	"redenvelope/infra"
 	"redenvelope/infra/base"
-	"redenvelope/jobs"
 
 	"github.com/sirupsen/logrus"
 	"github.com/tietang/props/ini"
@@ -23,13 +21,8 @@ func init() {
 	infra.Register(&base.PropsStarter{})
 	infra.Register(&base.DbxDatabaseStarter{})
 	infra.Register(&base.ValidatorStarter{})
-	infra.Register(&jobs.RefundExpiredJobStarter{})
-	infra.Register(&base.IrisServerStarter{})
-	infra.Register(&infra.WebAPIStarter{})
-
-}
-func main() {
-
+	//infra.Register(&base.IrisServerStarter{})
+	//infra.Register(&infra.WebAPIStarter{})
 	app := infra.New(conf)
 	logrus.Info("app:", app)
 	app.Start()

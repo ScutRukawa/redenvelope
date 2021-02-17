@@ -3,6 +3,7 @@ package accounts
 import (
 	"errors"
 	"redenvelope/services"
+	"sync"
 
 	"github.com/shopspring/decimal"
 	"github.com/sirupsen/logrus"
@@ -12,6 +13,14 @@ import (
 )
 
 //var _ services.AccountService =
+
+var once sync.Once
+
+func init() {
+	once.Do(func() {
+		services.IAccountService = new(AccountService)
+	})
+}
 
 type AccountService struct {
 }
